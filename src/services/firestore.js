@@ -5,7 +5,6 @@ import {
   getDoc,
   getDocs,
   limit,
-  orderBy,
   query,
   serverTimestamp,
   setDoc,
@@ -67,10 +66,14 @@ export async function getDersKonuListesi() {
     return toLegacyDersKonuMap(snap.data().liste)
   }
 
-  await setDoc(docRef, {
-    liste: baseDersKonu,
-    createdAt: serverTimestamp(),
-  })
+  try {
+    await setDoc(docRef, {
+      liste: baseDersKonu,
+      createdAt: serverTimestamp(),
+    })
+  } catch {
+    // Sadece koç yazabilir; öğrenci ilk açtığında yazma denemesi başarısız olursa sessizce geç
+  }
   return baseMapped
 }
 
@@ -107,15 +110,27 @@ export async function addQuestionMeta({ uid, ders, konu, medyaId }) {
 
 export async function getStudentWeeklyQuestions(uid, weekNo) {
   ensureFirebase()
+  // Bileşik index gerektirmemesi için tek alanlı sorgu + JS'te filtre/sıralama
   const q = query(
     collection(db, 'sorular'),
     where('uid', '==', uid),
-    where('tekrarHaftasi', '<=', weekNo),
-    orderBy('tekrarHaftasi', 'asc'),
-    orderBy('tarih', 'asc'),
     limit(500),
   )
 
+  const snap = await getDocs(q)
+  return snap.docs
+    .map((item) => ({ id: item.id, ...item.data() }))
+    .filter((item) => (item.tekrarHaftasi ?? 0) <= weekNo)
+    .sort((a, b) => {
+      const weekDiff = (a.tekrarHaftasi ?? 0) - (b.tekrarHaftasi ?? 0)
+      if (weekDiff !== 0) return weekDiff
+      return (a.tarih?.toMillis?.() || 0) - (b.tarih?.toMillis?.() || 0)
+    })
+}
+
+export async function getStudentQuestions(uid) {
+  ensureFirebase()
+  const q = query(collection(db, 'sorular'), where('uid', '==', uid), limit(500))
   const snap = await getDocs(q)
   return snap.docs.map((item) => ({ id: item.id, ...item.data() }))
 }
@@ -147,14 +162,14 @@ export async function saveWeeklyResult({ uid, haftaNo, dogruSayisi, yanlisSayisi
 export async function getCoachStudents() {
   ensureFirebase()
 
+  // Bileşik index gerektirmemesi için tek alanlı sorgu + JS'te sıralama
   const studentsQuery = query(
     collection(db, 'users'),
     where('rol', '==', 'ogrenci'),
-    orderBy('ad', 'asc'),
   )
   const studentsSnap = await getDocs(studentsQuery)
 
-  return studentsSnap.docs.map((item) => {
+  const students = studentsSnap.docs.map((item) => {
     const row = item.data()
     return {
       uid: row.uid || item.id,
@@ -162,6 +177,9 @@ export async function getCoachStudents() {
       email: row.email || '',
     }
   })
+
+  students.sort((a, b) => a.ad.localeCompare(b.ad, 'tr'))
+  return students
 }
 
 export async function getCoachDashboardData(weekNo, dayStart, dayEnd) {
@@ -188,7 +206,6 @@ export async function getCoachDashboardData(weekNo, dayStart, dayEnd) {
     query(
       collection(db, 'sorular'),
       where('sonTekrarHaftasi', '==', weekNo),
-      where('durum', '==', 'dogru'),
     ),
   )
 
@@ -231,6 +248,7 @@ export async function getCoachDashboardData(weekNo, dayStart, dayEnd) {
 
   carryCorrectSnap.docs.forEach((docItem) => {
     const row = docItem.data()
+    if (row.durum !== 'dogru') return
     const uid = row.uid
     if (!uid || !studentMap[uid]) return
 
@@ -317,13 +335,13 @@ export async function getCoachWeeklyStats(weekNo) {
   const carryQ = query(
     collection(db, 'sorular'),
     where('sonTekrarHaftasi', '==', weekNo),
-    where('durum', '==', 'dogru'),
   )
 
   const carrySnap = await getDocs(carryQ)
   let oncekiHaftadanDogru = 0
   carrySnap.docs.forEach((item) => {
     const row = item.data()
+    if (row.durum !== 'dogru') return
     if ((row.haftaNo || weekNo) < weekNo) {
       oncekiHaftadanDogru += 1
     }

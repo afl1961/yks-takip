@@ -148,6 +148,37 @@ button.success {
   padding-left: 20px;
 }
 
+.question-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.question-item {
+  border: 1px solid #dbe4f5;
+  border-radius: 12px;
+  padding: 12px;
+  background: #fafcff;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.question-item-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.question-item audio {
+  width: 100%;
+}
+
 .list-row {
   display: flex;
   justify-content: space-between;

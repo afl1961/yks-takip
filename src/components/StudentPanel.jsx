@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   addQuestionMeta,
   getDersKonuListesi,
+  getStudentQuestions,
   getStudentWeeklyQuestions,
   markQuestionResult,
   saveWeeklyResult,
@@ -38,8 +39,42 @@ function StudentPanel({ user, firebaseReady }) {
   const [correctCount, setCorrectCount] = useState(0)
   const [wrongCount, setWrongCount] = useState(0)
 
+  const [myQuestions, setMyQuestions] = useState([])
+  const [loadingQuestions, setLoadingQuestions] = useState(false)
+
   const mediaRecorderRef = useRef(null)
   const mediaChunksRef = useRef([])
+
+  const loadMyQuestions = async () => {
+    if (!firebaseReady || !user?.uid) return
+    setLoadingQuestions(true)
+    try {
+      const questions = await getStudentQuestions(user.uid)
+      const withMedia = await Promise.all(
+        questions.map(async (q) => {
+          const media = await getMediaById(q.medyaId)
+          return {
+            ...q,
+            imageUrl: media?.imageBlob ? URL.createObjectURL(media.imageBlob) : null,
+            audioUrl: media?.audioBlob ? URL.createObjectURL(media.audioBlob) : null,
+          }
+        }),
+      )
+      withMedia.sort(
+        (a, b) => (b.tarih?.toMillis?.() || 0) - (a.tarih?.toMillis?.() || 0),
+      )
+      setMyQuestions(withMedia)
+    } catch (err) {
+      setMessage(err.message)
+    } finally {
+      setLoadingQuestions(false)
+    }
+  }
+
+  useEffect(() => {
+    loadMyQuestions()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [firebaseReady, user?.uid])
 
   useEffect(() => {
     const fetchList = async () => {
@@ -131,6 +166,7 @@ function StudentPanel({ user, firebaseReady }) {
       setAudioBlob(null)
       setAudioUrl('')
       setMessage('Soru başarıyla kaydedildi.')
+      loadMyQuestions()
     } catch (err) {
       setMessage(err.message || 'Soru kaydedilirken hata oluştu.')
     } finally {
@@ -292,6 +328,42 @@ function StudentPanel({ user, firebaseReady }) {
             {busy ? 'Kaydediliyor...' : 'Soruyu Kaydet'}
           </button>
         </form>
+      </section>
+
+      <section className="card">
+        <h2>Sorularım</h2>
+        <p className="muted">Yüklediğin tüm sorular burada listelenir; fotoğraf ve ses kaydını istediğin zaman görüntüleyebilirsin.</p>
+
+        {loadingQuestions ? (
+          <p>Yükleniyor...</p>
+        ) : myQuestions.length === 0 ? (
+          <p>Henüz soru yüklemedin.</p>
+        ) : (
+          <ul className="question-list">
+            {myQuestions.map((q) => (
+              <li key={q.id} className="question-item">
+                <div className="question-item-head">
+                  <strong>{q.ders}</strong> / {q.konu}
+                  <span className="muted">
+                    {q.tarih
+                      ? new Date(q.tarih.toMillis()).toLocaleDateString('tr-TR')
+                      : ''}
+                  </span>
+                </div>
+                {q.imageUrl ? (
+                  <img className="question-image" src={q.imageUrl} alt="Soru görseli" />
+                ) : (
+                  <div className="warning-box">Fotoğraf cihazda bulunamadı.</div>
+                )}
+                {q.audioUrl ? (
+                  <audio controls src={q.audioUrl} />
+                ) : (
+                  <p className="muted">Ses kaydı yok.</p>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
       <section className="card">
