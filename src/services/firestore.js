@@ -31,21 +31,47 @@ function emptyWeeklyStats() {
   }
 }
 
+function toLegacyDersKonuMap(payload) {
+  if (payload?.TYT && payload?.AYT) {
+    return payload
+  }
+
+  if (payload?.dersler && Array.isArray(payload.dersler)) {
+    const mapped = { TYT: {}, AYT: {} }
+    payload.dersler.forEach((item) => {
+      const oturum = String(item?.oturum || '').trim().toUpperCase()
+      const ders = item?.ders
+      const konular = Array.isArray(item?.konular) ? item.konular : []
+
+      if (!oturum || !ders) return
+      if (!mapped[oturum]) {
+        mapped[oturum] = {}
+      }
+      mapped[oturum][ders] = konular
+    })
+    return mapped
+  }
+
+  return { TYT: {}, AYT: {} }
+}
+
 export async function getDersKonuListesi() {
-  if (!firebaseReady || !db) return baseDersKonu
+  const baseMapped = toLegacyDersKonuMap(baseDersKonu)
+
+  if (!firebaseReady || !db) return baseMapped
 
   const docRef = doc(db, 'ders_konu_yonetim', 'liste')
   const snap = await getDoc(docRef)
 
   if (snap.exists()) {
-    return snap.data().liste
+    return toLegacyDersKonuMap(snap.data().liste)
   }
 
   await setDoc(docRef, {
     liste: baseDersKonu,
     createdAt: serverTimestamp(),
   })
-  return baseDersKonu
+  return baseMapped
 }
 
 export async function saveDersKonuListesi(liste) {
