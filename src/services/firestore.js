@@ -140,7 +140,7 @@ export async function markQuestionResult({ questionId, isCorrect, currentWeek })
   const ref = doc(db, 'sorular', questionId)
   await updateDoc(ref, {
     durum: isCorrect ? 'dogru' : 'yanlis',
-    tekrarHaftasi: isCorrect ? currentWeek : currentWeek + 1,
+    tekrarHaftasi: isCorrect ? currentWeek + 3 : currentWeek + 1,
     sonTekrarHaftasi: currentWeek,
     updatedAt: serverTimestamp(),
   })

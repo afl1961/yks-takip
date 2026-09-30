@@ -192,22 +192,24 @@ function StudentPanel({ user, firebaseReady }) {
       return
     }
 
+    const count = imageFiles.length
     setBusy(true)
     setMessage('')
 
     try {
-      const mediaId = await saveMedia({ imageBlobs: imageFiles, audioBlob })
-      await addQuestionMeta({
-        uid: user.uid,
-        ders,
-        konu,
-        medyaId: mediaId,
-      })
+      // Her fotoğraf → ayrı Firestore + IndexedDB kaydı (haftalık tekrarda bağımsız soru)
+      // Ses kaydı tüm fotoğraflara aynı şekilde eklenir
+      await Promise.all(
+        imageFiles.map(async (file) => {
+          const mediaId = await saveMedia({ imageBlobs: [file], audioBlob })
+          await addQuestionMeta({ uid: user.uid, ders, konu, medyaId: mediaId })
+        }),
+      )
 
       setImageFiles([])
       setAudioBlob(null)
       setAudioUrl('')
-      setMessage('Soru başarıyla kaydedildi.')
+      setMessage(`${count} soru başarıyla kaydedildi.`)
       loadMyQuestions()
     } catch (err) {
       setMessage(err.message || 'Soru kaydedilirken hata oluştu.')
