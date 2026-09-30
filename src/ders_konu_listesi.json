@@ -1,0 +1,352 @@
+{
+  "kaynak": "https://www.kitapsec.com/blog/yks-2023-tyt-ayt-konulari-112.html (güncel YKS müfredatı) + MEB müfredatı tamamlayıcı kaynaklar",
+  "not": "Bu liste uygulamanın başlangıç verisidir. Koç, uygulama içinden ders ve konu ekleyip çıkarabilir.",
+  "dersler": [
+    {
+      "oturum": "TYT",
+      "ders": "TYT Türkçe",
+      "konular": [
+        "Sözcükte Anlam, Söz Yorumu, Deyim ve Atasözü",
+        "Cümlede Anlam",
+        "Paragraf (Anlatım Teknikleri, Düşünceyi Geliştirme, Yapı, Konu-Ana Düşünce, Yardımcı Düşünce)",
+        "Ses Bilgisi",
+        "Yazım Kuralları",
+        "Noktalama İşaretleri",
+        "Sözcükte Yapı / Ekler",
+        "Sözcük Türleri (İsimler, Zamirler, Sıfatlar, Zarflar, Edat-Bağlaç-Ünlem)",
+        "Fiiller (Anlam, Ek Fiil, Fiilimsi, Çatı)",
+        "Sözcük Grupları, Cümlenin Ögeleri, Cümle Türleri, Anlatım Bozukluğu"
+      ]
+    },
+    {
+      "oturum": "TYT",
+      "ders": "TYT Matematik",
+      "konular": [
+        "Temel Kavramlar",
+        "Sayı Basamakları",
+        "Bölme ve Bölünebilme",
+        "EBOB-EKOK",
+        "Rasyonel Sayılar",
+        "Basit Eşitsizlikler",
+        "Mutlak Değer",
+        "Üslü Sayılar",
+        "Köklü Sayılar",
+        "Çarpanlara Ayırma",
+        "Oran-Orantı",
+        "Denklem Çözme",
+        "Problemler (Sayı, Kesir, Yaş, Hareket, İşçi, Yüzde, Kar-Zarar, Karışım, Grafik, Rutin Olmayan)",
+        "Kümeler ve Kartezyen Çarpım",
+        "Mantık",
+        "Fonksiyonlar",
+        "Polinomlar",
+        "2. Dereceden Denklemler",
+        "Permütasyon ve Kombinasyon",
+        "Olasılık",
+        "Veri-İstatistik"
+      ]
+    },
+    {
+      "oturum": "TYT",
+      "ders": "TYT Geometri",
+      "konular": [
+        "Temel Kavramlar, Doğruda Açılar",
+        "Üçgende Açılar, Özel Üçgenler, Dik Üçgen",
+        "İkizkenar Üçgen, Eşkenar Üçgen, Açıortay, Kenarortay",
+        "Eşlik ve Benzerlik, Üçgende Alan",
+        "Çokgenler, Özel Dörtgenler (Deltoid, Paralelkenar, Eşkenar Dörtgen, Dikdörtgen, Kare, Yamuk)",
+        "Çember ve Daire (Açı, Uzunluk, Çevre ve Alan)",
+        "Analitik Geometri",
+        "Katı Cisimler",
+        "Çemberin Analitiği"
+      ]
+    },
+    {
+      "oturum": "TYT",
+      "ders": "TYT Fizik",
+      "konular": [
+        "Fizik Bilimine Giriş",
+        "Madde ve Özellikleri",
+        "Sıvıların Kaldırma Kuvveti",
+        "Basınç",
+        "Isı, Sıcaklık ve Genleşme",
+        "Hareket ve Kuvvet",
+        "Dinamik",
+        "İş, Güç ve Enerji",
+        "Elektrik",
+        "Manyetizma",
+        "Dalgalar",
+        "Optik"
+      ]
+    },
+    {
+      "oturum": "TYT",
+      "ders": "TYT Kimya",
+      "konular": [
+        "Kimya Bilimi",
+        "Atom ve Periyodik Sistem",
+        "Kimyasal Türler Arası Etkileşimler",
+        "Maddenin Halleri",
+        "Doğa ve Kimya",
+        "Kimyanın Temel Kanunları",
+        "Kimyasal Hesaplamalar",
+        "Karışımlar",
+        "Asit, Baz ve Tuz",
+        "Kimya Her Yerde"
+      ]
+    },
+    {
+      "oturum": "TYT",
+      "ders": "TYT Biyoloji",
+      "konular": [
+        "Canlıların Ortak Özellikleri",
+        "Canlıların Temel Bileşenleri",
+        "Hücre ve Organelleri",
+        "Hücre Zarından Madde Geçişi",
+        "Canlıların Sınıflandırılması",
+        "Mitoz ve Eşeysiz Üreme",
+        "Mayoz ve Eşeyli Üreme",
+        "Kalıtım",
+        "Ekosistem Ekolojisi",
+        "Güncel Çevre Sorunları"
+      ]
+    },
+    {
+      "oturum": "TYT",
+      "ders": "TYT Tarih",
+      "konular": [
+        "Tarih ve Zaman",
+        "İnsanlığın İlk Dönemleri",
+        "Orta Çağ'da Dünya",
+        "İlk ve Orta Çağlarda Türk Dünyası",
+        "İslam Medeniyetinin Doğuşu",
+        "Türklerin İslamiyet'i Kabulü",
+        "Osmanlı Tarihi (Beylikten Devlete, Dünya Gücü, Duraklama, Değişim, Denge Stratejisi)",
+        "Milli Mücadele",
+        "Atatürkçülük ve Türk İnkılabı"
+      ]
+    },
+    {
+      "oturum": "TYT",
+      "ders": "TYT Coğrafya",
+      "konular": [
+        "Doğa ve İnsan",
+        "Dünya'nın Şekli ve Hareketleri",
+        "Coğrafi Konum",
+        "Harita Bilgisi",
+        "İklim Bilgisi (Atmosfer, Sıcaklık, Basınç, Rüzgarlar, Nem, Yağış)",
+        "İç ve Dış Kuvvetler",
+        "Nüfus, Göç, Yerleşme",
+        "Türkiye'nin Yer Şekilleri",
+        "Ekonomik Faaliyetler",
+        "Doğal Afetler"
+      ]
+    },
+    {
+      "oturum": "TYT",
+      "ders": "TYT Felsefe",
+      "konular": [
+        "Felsefe'nin Konusu",
+        "Bilgi Felsefesi",
+        "Varlık Felsefesi",
+        "Ahlak Felsefesi",
+        "Sanat Felsefesi",
+        "Din Felsefesi",
+        "Siyaset Felsefesi",
+        "Bilim Felsefesi",
+        "Felsefe Tarihi (İlk Çağ, 2.-15. yy, 15.-17. yy, 18.-19. yy, 20. yy)"
+      ]
+    },
+    {
+      "oturum": "TYT",
+      "ders": "TYT Din Kültürü ve Ahlak Bilgisi",
+      "konular": [
+        "Bilgi ve İnanç",
+        "İslam ve İbadet",
+        "Ahlak ve Değerler",
+        "Allah-İnsan İlişkisi",
+        "Hz. Muhammed (S.A.V.)",
+        "Vahiy ve Akıl",
+        "İslam Düşüncesinde Yorumlar ve Mezhepler",
+        "Din, Kültür ve Medeniyet",
+        "İslam ve Bilim / Estetik / Barış",
+        "Yaşayan Dinler"
+      ]
+    },
+    {
+      "oturum": "AYT",
+      "ders": "AYT Matematik",
+      "konular": [
+        "Kümeler",
+        "Denklem ve Eşitsizlikler",
+        "Fonksiyonlar",
+        "Üçgenler",
+        "Veri",
+        "Olasılık",
+        "Sayma",
+        "Dörtgenler",
+        "2. Dereceden Denklemler",
+        "Polinomlar",
+        "Katı Cisimler",
+        "Trigonometri",
+        "Analitik Geometri",
+        "Denklem Sistemleri",
+        "Çember ve Daire",
+        "Uzay Geometri",
+        "Üstel ve Logaritmik Fonksiyonlar",
+        "Diziler",
+        "Limit",
+        "Türev",
+        "İntegral",
+        "Dönüşümler"
+      ]
+    },
+    {
+      "oturum": "AYT",
+      "ders": "AYT Türk Dili ve Edebiyatı",
+      "konular": [
+        "Hikaye",
+        "Şiir",
+        "Masal",
+        "Fabl",
+        "Roman",
+        "Tiyatro",
+        "Biyografi",
+        "Otobiyografi",
+        "Mektup",
+        "Günlük",
+        "Blog",
+        "Destan",
+        "Efsane",
+        "Makale",
+        "Sohbet",
+        "Eleştiri",
+        "Röportaj",
+        "Deneme",
+        "Söylev",
+        "Edebiyat Tarihi (İslamiyet Öncesi, Halk Edebiyatı, Divan Edebiyatı, Tanzimat, Servet-i Fünun, Milli Edebiyat, Cumhuriyet Dönemi, Batı Edebiyatı Akımları)"
+      ]
+    },
+    {
+      "oturum": "AYT",
+      "ders": "AYT Fizik",
+      "konular": [
+        "Vektörler",
+        "Kuvvet, Tork ve Denge",
+        "Kütle Merkezi",
+        "Basit Makineler",
+        "Hareket",
+        "Newton'un Hareket Yasaları",
+        "İş, Güç ve Enerji",
+        "Atışlar",
+        "İtme ve Momentum",
+        "Çembersel Hareket",
+        "Dönme, Yuvarlanma ve Açısal Momentum",
+        "Kütle Çekim ve Kepler Yasaları",
+        "Basit Harmonik Hareket",
+        "Elektrik Alan ve Potansiyel",
+        "Paralel Levhalar ve Sığa",
+        "Manyetik Alan ve Manyetik Kuvvet",
+        "İndüksiyon, Alternatif Akım ve Transformatörler",
+        "Dalga Mekaniği ve Elektromanyetik Dalgalar",
+        "Atom Modelleri",
+        "Büyük Patlama ve Parçacık Fiziği",
+        "Radyoaktivite",
+        "Özel Görelilik",
+        "Kara Cisim Işıması",
+        "Fotoelektrik Olay ve Compton Olayı",
+        "Modern Fiziğin Teknolojideki Uygulamaları"
+      ]
+    },
+    {
+      "oturum": "AYT",
+      "ders": "AYT Kimya",
+      "konular": [
+        "Modern Atom Teorisi",
+        "Gazlar",
+        "Sıvı Çözeltiler ve Çözünürlük",
+        "Kimyasal Tepkimelerde Enerji",
+        "Kimyasal Tepkimelerde Hız",
+        "Kimyasal Tepkimelerde Denge",
+        "Kimya ve Elektrik",
+        "Organik Kimya",
+        "Enerji Kaynakları ve Bilimsel Gelişmeler"
+      ]
+    },
+    {
+      "oturum": "AYT",
+      "ders": "AYT Biyoloji",
+      "konular": [
+        "Sinir Sistemi",
+        "Endokrin Sistem",
+        "Duyu Organları",
+        "Destek ve Hareket Sistemi",
+        "Sindirim Sistemi",
+        "Dolaşım ve Bağışıklık Sistemi",
+        "Solunum Sistemi",
+        "Boşaltım Sistemi",
+        "Üreme Sistemi ve Embriyonik Gelişim",
+        "Nükleik Asitler (DNA-RNA)",
+        "Protein Sentezi",
+        "Biyoteknoloji",
+        "Fotosentez",
+        "Kemosentez",
+        "Hücresel Solunum",
+        "Bitki Biyolojisi",
+        "Komünite Ekolojisi",
+        "Popülasyon Ekolojisi",
+        "Güncel Çevre Sorunları"
+      ]
+    },
+    {
+      "oturum": "AYT",
+      "ders": "AYT Tarih",
+      "konular": [
+        "İlk Çağlar",
+        "İslam Tarihi",
+        "Türk-İslam Devletleri",
+        "Osmanlı Devleti",
+        "İnkılap Tarihi",
+        "Atatürkçülük",
+        "Dünya ve Türkiye Tarihi"
+      ]
+    },
+    {
+      "oturum": "AYT",
+      "ders": "AYT Coğrafya",
+      "konular": [
+        "Doğal Sistemler",
+        "Beşeri Sistemler",
+        "Küresel Ortam",
+        "Çevre ve Toplum",
+        "Ekonomik Faaliyetler",
+        "Türkiye'nin Coğrafyası"
+      ]
+    },
+    {
+      "oturum": "AYT",
+      "ders": "AYT Felsefe Grubu",
+      "konular": [
+        "Felsefe",
+        "Mantık",
+        "Psikoloji",
+        "Sosyoloji"
+      ]
+    },
+    {
+      "oturum": "AYT",
+      "ders": "AYT Din Kültürü ve Ahlak Bilgisi",
+      "konular": [
+        "Bilgi ve İnanç",
+        "İslam ve İbadet",
+        "Ahlak ve Değerler",
+        "Allah-İnsan İlişkisi",
+        "Hz. Muhammed (S.A.V.)",
+        "Vahiy ve Akıl",
+        "İslam Düşüncesinde Yorumlar ve Mezhepler",
+        "Din, Kültür ve Medeniyet",
+        "İslam ve Bilim / Estetik / Barış",
+        "Yaşayan Dinler"
+      ]
+    }
+  ]
+}
