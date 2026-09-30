@@ -18,16 +18,24 @@ function openDb() {
   })
 }
 
-export async function saveMedia({ imageBlob, audioBlob }) {
+export async function saveMedia({ imageBlobs = [], imageBlob, audioBlob }) {
   const db = await openDb()
   const id = crypto.randomUUID()
+
+  // Yeni kayıtlar imageBlobs dizisi kullanır; eski tek fotoğraflı kayıtlar için imageBlob da kabul edilir
+  const blobs =
+    Array.isArray(imageBlobs) && imageBlobs.length > 0
+      ? imageBlobs
+      : imageBlob
+        ? [imageBlob]
+        : []
 
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, 'readwrite')
     const store = tx.objectStore(STORE_NAME)
     store.put({
       id,
-      imageBlob: imageBlob || null,
+      imageBlobs: blobs,
       audioBlob: audioBlob || null,
       createdAt: Date.now(),
     })

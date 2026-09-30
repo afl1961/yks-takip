@@ -8,7 +8,7 @@ import {
   saveWeeklyResult,
 } from '../services/firestore'
 import { getMediaById, saveMedia } from '../lib/indexedDb'
-import { getWeekNumber, isWeekend } from '../lib/week'
+import { getWeekNumber } from '../lib/week'
 
 function shuffleArray(arr) {
   const clone = [...arr]
@@ -19,12 +19,20 @@ function shuffleArray(arr) {
   return clone
 }
 
+// Eski (tek imageBlob) ve yeni (imageBlobs dizisi) kayıtları birlikte destekler
+function getImageBlobs(media) {
+  if (!media) return []
+  if (Array.isArray(media.imageBlobs)) return media.imageBlobs
+  if (media.imageBlob) return [media.imageBlob]
+  return []
+}
+
 function StudentPanel({ user, firebaseReady }) {
   const [liste, setListe] = useState({ TYT: {}, AYT: {} })
   const [oturum, setOturum] = useState('TYT')
   const [ders, setDers] = useState('')
   const [konu, setKonu] = useState('')
-  const [imageFile, setImageFile] = useState(null)
+  const [imageFiles, setImageFiles] = useState([])
   const [audioBlob, setAudioBlob] = useState(null)
   const [audioUrl, setAudioUrl] = useState('')
   const [recording, setRecording] = useState(false)
@@ -55,7 +63,7 @@ function StudentPanel({ user, firebaseReady }) {
           const media = await getMediaById(q.medyaId)
           return {
             ...q,
-            imageUrl: media?.imageBlob ? URL.createObjectURL(media.imageBlob) : null,
+            imageUrls: getImageBlobs(media).map((blob) => URL.createObjectURL(blob)),
             audioUrl: media?.audioBlob ? URL.createObjectURL(media.audioBlob) : null,
           }
         }),
@@ -105,8 +113,27 @@ function StudentPanel({ user, firebaseReady }) {
 
   const startRecording = async () => {
     try {
+      if (!navigator.mediaDevices?.getUserMedia) {
+        setMessage('Bu tarayıcı ses kaydını desteklemiyor. Güncel bir tarayıcı kullan.')
+        return
+      }
+      if (typeof window.MediaRecorder === 'undefined') {
+        setMessage('Bu tarayıcı ses kaydını desteklemiyor (MediaRecorder yok).')
+        return
+      }
+
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      const recorder = new MediaRecorder(stream)
+
+      // Tarayıcının desteklediği ses formatını seç (iOS Safari mp4 üretir)
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm')
+        ? 'audio/webm'
+        : MediaRecorder.isTypeSupported('audio/mp4')
+          ? 'audio/mp4'
+          : ''
+      const recorder = mimeType
+        ? new MediaRecorder(stream, { mimeType })
+        : new MediaRecorder(stream)
+
       mediaRecorderRef.current = recorder
       mediaChunksRef.current = []
 
@@ -117,16 +144,31 @@ function StudentPanel({ user, firebaseReady }) {
       }
 
       recorder.onstop = () => {
-        const blob = new Blob(mediaChunksRef.current, { type: 'audio/webm' })
+        const blob = new Blob(mediaChunksRef.current, {
+          type: recorder.mimeType || 'audio/webm',
+        })
         setAudioBlob(blob)
         setAudioUrl(URL.createObjectURL(blob))
         stream.getTracks().forEach((track) => track.stop())
       }
 
+      recorder.onerror = () => {
+        setMessage('Ses kaydı sırasında bir hata oluştu.')
+        setRecording(false)
+        stream.getTracks().forEach((track) => track.stop())
+      }
+
       recorder.start()
       setRecording(true)
-    } catch {
-      setMessage('Mikrofon izni alınamadı.')
+      setMessage('')
+    } catch (err) {
+      if (err?.name === 'NotAllowedError' || err?.name === 'PermissionDeniedError') {
+        setMessage('Mikrofon izni verilmedi. Tarayıcı ayarlarından mikrofon iznini aç.')
+      } else if (err?.name === 'NotFoundError' || err?.name === 'DevicesNotFoundError') {
+        setMessage('Mikrofon bulunamadı. Cihazında mikrofon olduğundan emin ol.')
+      } else {
+        setMessage('Mikrofon başlatılamadı: ' + (err?.message || 'bilinmeyen hata'))
+      }
     }
   }
 
@@ -145,8 +187,8 @@ function StudentPanel({ user, firebaseReady }) {
       return
     }
 
-    if (!imageFile) {
-      setMessage('Lütfen soru fotoğrafı ekleyin.')
+    if (imageFiles.length === 0) {
+      setMessage('Lütfen en az bir soru fotoğrafı ekleyin.')
       return
     }
 
@@ -154,7 +196,7 @@ function StudentPanel({ user, firebaseReady }) {
     setMessage('')
 
     try {
-      const mediaId = await saveMedia({ imageBlob: imageFile, audioBlob })
+      const mediaId = await saveMedia({ imageBlobs: imageFiles, audioBlob })
       await addQuestionMeta({
         uid: user.uid,
         ders,
@@ -162,7 +204,7 @@ function StudentPanel({ user, firebaseReady }) {
         medyaId: mediaId,
       })
 
-      setImageFile(null)
+      setImageFiles([])
       setAudioBlob(null)
       setAudioUrl('')
       setMessage('Soru başarıyla kaydedildi.')
@@ -180,19 +222,16 @@ function StudentPanel({ user, firebaseReady }) {
       return
     }
 
-    if (!isWeekend(new Date())) {
-      setMessage('Haftalık tekrar sadece Cumartesi/Pazar günleri açılır.')
-      return
-    }
-
     try {
       const weekNo = getWeekNumber(new Date())
       const questions = await getStudentWeeklyQuestions(user.uid, weekNo)
       const withMedia = await Promise.all(
         questions.map(async (q) => {
           const media = await getMediaById(q.medyaId)
-          const imageUrl = media?.imageBlob ? URL.createObjectURL(media.imageBlob) : null
-          return { ...q, imageUrl }
+          return {
+            ...q,
+            imageUrls: getImageBlobs(media).map((blob) => URL.createObjectURL(blob)),
+          }
         }),
       )
 
@@ -300,14 +339,17 @@ function StudentPanel({ user, firebaseReady }) {
           </label>
 
           <label>
-            Soru Fotoğrafı
+            Soru Fotoğrafı (birden fazla seçebilirsin)
             <input
               type="file"
               accept="image/*"
-              capture="environment"
-              onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+              multiple
+              onChange={(e) => setImageFiles(Array.from(e.target.files || []))}
               required
             />
+            {imageFiles.length > 0 && (
+              <span className="muted">{imageFiles.length} fotoğraf seçildi</span>
+            )}
           </label>
 
           <div className="stack">
@@ -331,45 +373,9 @@ function StudentPanel({ user, firebaseReady }) {
       </section>
 
       <section className="card">
-        <h2>Sorularım</h2>
-        <p className="muted">Yüklediğin tüm sorular burada listelenir; fotoğraf ve ses kaydını istediğin zaman görüntüleyebilirsin.</p>
-
-        {loadingQuestions ? (
-          <p>Yükleniyor...</p>
-        ) : myQuestions.length === 0 ? (
-          <p>Henüz soru yüklemedin.</p>
-        ) : (
-          <ul className="question-list">
-            {myQuestions.map((q) => (
-              <li key={q.id} className="question-item">
-                <div className="question-item-head">
-                  <strong>{q.ders}</strong> / {q.konu}
-                  <span className="muted">
-                    {q.tarih
-                      ? new Date(q.tarih.toMillis()).toLocaleDateString('tr-TR')
-                      : ''}
-                  </span>
-                </div>
-                {q.imageUrl ? (
-                  <img className="question-image" src={q.imageUrl} alt="Soru görseli" />
-                ) : (
-                  <div className="warning-box">Fotoğraf cihazda bulunamadı.</div>
-                )}
-                {q.audioUrl ? (
-                  <audio controls src={q.audioUrl} />
-                ) : (
-                  <p className="muted">Ses kaydı yok.</p>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      <section className="card">
         <h2>Haftalık Tekrar</h2>
         <p className="muted">
-          Sadece hafta sonu açılır. Sorular karışık gelir, önce ders/konu gizli kalır.
+          Her gün yapılabilir. Sorular karışık gelir, önce ders/konu gizli kalır.
         </p>
 
         {!repeatStarted && (
@@ -380,8 +386,17 @@ function StudentPanel({ user, firebaseReady }) {
           <div className="stack gap-md">
             <p className="badge">Soru {repeatIndex + 1} / {repeatQuestions.length}</p>
 
-            {currentQuestion.imageUrl ? (
-              <img className="question-image" src={currentQuestion.imageUrl} alt="Soru görseli" />
+            {currentQuestion.imageUrls?.length > 0 ? (
+              <div className="stack gap-md">
+                {currentQuestion.imageUrls.map((url, i) => (
+                  <img
+                    key={i}
+                    className="question-image"
+                    src={url}
+                    alt={`Soru görseli ${i + 1}`}
+                  />
+                ))}
+              </div>
             ) : (
               <div className="warning-box">Bu sorunun fotoğrafı cihazda bulunamadı.</div>
             )}
@@ -410,6 +425,51 @@ function StudentPanel({ user, firebaseReady }) {
             <p>Yanlış: {repeatSummary.yanlis}</p>
             <p>Yanlış sorular gelecek haftaya devredildi.</p>
           </div>
+        )}
+      </section>
+
+      <section className="card">
+        <h2>Sorularım</h2>
+        <p className="muted">Yüklediğin tüm sorular burada listelenir; fotoğraf ve ses kaydını istediğin zaman görüntüleyebilirsin.</p>
+
+        {loadingQuestions ? (
+          <p>Yükleniyor...</p>
+        ) : myQuestions.length === 0 ? (
+          <p>Henüz soru yüklemedin.</p>
+        ) : (
+          <ul className="question-list">
+            {myQuestions.map((q) => (
+              <li key={q.id} className="question-item">
+                <div className="question-item-head">
+                  <strong>{q.ders}</strong> / {q.konu}
+                  <span className="muted">
+                    {q.tarih
+                      ? new Date(q.tarih.toMillis()).toLocaleDateString('tr-TR')
+                      : ''}
+                  </span>
+                </div>
+                {q.imageUrls?.length > 0 ? (
+                  <div className="stack gap-md">
+                    {q.imageUrls.map((url, i) => (
+                      <img
+                        key={i}
+                        className="question-image"
+                        src={url}
+                        alt={`Soru görseli ${i + 1}`}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="warning-box">Fotoğraf cihazda bulunamadı.</div>
+                )}
+                {q.audioUrl ? (
+                  <audio controls src={q.audioUrl} />
+                ) : (
+                  <p className="muted">Ses kaydı yok.</p>
+                )}
+              </li>
+            ))}
+          </ul>
         )}
       </section>
 
