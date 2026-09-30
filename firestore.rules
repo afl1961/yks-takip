@@ -1,0 +1,60 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isCoach() {
+      return isSignedIn() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.rol == 'koc';
+    }
+
+    function isOwnUser(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    // Kullanıcı profilleri:
+    // - Koç tüm profilleri okuyabilir (öğrenci listesi için)
+    // - Herkes sadece kendi profilini yazabilir
+    match /users/{uid} {
+      allow read: if isOwnUser(uid) || isCoach();
+      allow write: if isOwnUser(uid);
+    }
+
+    // Sorular:
+    // - Öğrenci kendi sorularını okur/yazar
+    // - Koç tüm soruları okuyabilir
+    match /sorular/{id} {
+      allow read: if isSignedIn() && (
+        resource.data.uid == request.auth.uid ||
+        isCoach()
+      );
+      allow write: if isSignedIn() && request.resource.data.uid == request.auth.uid;
+    }
+
+    // Haftalık tekrar sonuçları (uygulamadaki aktif koleksiyon adı)
+    match /tekrar_sonuclari/{id} {
+      allow read: if isSignedIn() && (
+        resource.data.uid == request.auth.uid ||
+        isCoach()
+      );
+      allow write: if isSignedIn() && request.resource.data.uid == request.auth.uid;
+    }
+
+    // Haftalık tekrar sonuçları (alternatif koleksiyon adı için uyumluluk)
+    match /tekrarSonuclari/{id} {
+      allow read: if isSignedIn() && (
+        resource.data.uid == request.auth.uid ||
+        isCoach()
+      );
+      allow write: if isSignedIn() && request.resource.data.uid == request.auth.uid;
+    }
+
+    // Ders/Konu listesi: giriş yapan herkes okuyabilir, sadece koç yazabilir
+    match /ders_konu_yonetim/{id} {
+      allow read: if isSignedIn();
+      allow write: if isCoach();
+    }
+  }
+}

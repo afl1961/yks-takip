@@ -23,6 +23,14 @@ function ensureFirebase() {
   }
 }
 
+function emptyWeeklyStats() {
+  return {
+    dogru: 0,
+    yanlis: 0,
+    oncekiHaftadanDogru: 0,
+  }
+}
+
 export async function getDersKonuListesi() {
   if (!firebaseReady || !db) return baseDersKonu
 
@@ -108,6 +116,138 @@ export async function saveWeeklyResult({ uid, haftaNo, dogruSayisi, yanlisSayisi
     tarih: Timestamp.fromDate(new Date()),
     createdAt: serverTimestamp(),
   })
+}
+
+export async function getCoachStudents() {
+  ensureFirebase()
+
+  const studentsQuery = query(
+    collection(db, 'users'),
+    where('rol', '==', 'ogrenci'),
+    orderBy('ad', 'asc'),
+  )
+  const studentsSnap = await getDocs(studentsQuery)
+
+  return studentsSnap.docs.map((item) => {
+    const row = item.data()
+    return {
+      uid: row.uid || item.id,
+      ad: row.ad || 'Adsız Öğrenci',
+      email: row.email || '',
+    }
+  })
+}
+
+export async function getCoachDashboardData(weekNo, dayStart, dayEnd) {
+  ensureFirebase()
+
+  const studentsPromise = getCoachStudents()
+
+  const todaysQuestionsPromise = getDocs(
+    query(
+      collection(db, 'sorular'),
+      where('tarih', '>=', Timestamp.fromDate(dayStart)),
+      where('tarih', '<=', Timestamp.fromDate(dayEnd)),
+    ),
+  )
+
+  const weeklyResultsPromise = getDocs(
+    query(
+      collection(db, 'tekrar_sonuclari'),
+      where('haftaNo', '==', weekNo),
+    ),
+  )
+
+  const carryCorrectPromise = getDocs(
+    query(
+      collection(db, 'sorular'),
+      where('sonTekrarHaftasi', '==', weekNo),
+      where('durum', '==', 'dogru'),
+    ),
+  )
+
+  const [students, todaysQuestionsSnap, weeklyResultsSnap, carryCorrectSnap] = await Promise.all([
+    studentsPromise,
+    todaysQuestionsPromise,
+    weeklyResultsPromise,
+    carryCorrectPromise,
+  ])
+
+  const studentMap = {}
+  students.forEach((student) => {
+    studentMap[student.uid] = {
+      student,
+      todaysQuestionCount: 0,
+      dailyByTopicMap: {},
+      weeklyStats: emptyWeeklyStats(),
+    }
+  })
+
+  todaysQuestionsSnap.docs.forEach((docItem) => {
+    const row = docItem.data()
+    const uid = row.uid
+    if (!uid || !studentMap[uid]) return
+
+    studentMap[uid].todaysQuestionCount += 1
+
+    const topicKey = `${row.ders || 'Bilinmeyen Ders'}__${row.konu || 'Bilinmeyen Konu'}`
+    studentMap[uid].dailyByTopicMap[topicKey] = (studentMap[uid].dailyByTopicMap[topicKey] || 0) + 1
+  })
+
+  weeklyResultsSnap.docs.forEach((docItem) => {
+    const row = docItem.data()
+    const uid = row.uid
+    if (!uid || !studentMap[uid]) return
+
+    studentMap[uid].weeklyStats.dogru += row.dogruSayisi || 0
+    studentMap[uid].weeklyStats.yanlis += row.yanlisSayisi || 0
+  })
+
+  carryCorrectSnap.docs.forEach((docItem) => {
+    const row = docItem.data()
+    const uid = row.uid
+    if (!uid || !studentMap[uid]) return
+
+    if ((row.haftaNo || weekNo) < weekNo) {
+      studentMap[uid].weeklyStats.oncekiHaftadanDogru += 1
+    }
+  })
+
+  const overview = students.map((student) => {
+    const row = studentMap[student.uid]
+    return {
+      uid: student.uid,
+      ad: student.ad,
+      email: student.email,
+      bugunYuklenenSoru: row?.todaysQuestionCount || 0,
+      haftalikDogru: row?.weeklyStats?.dogru || 0,
+      haftalikYanlis: row?.weeklyStats?.yanlis || 0,
+    }
+  })
+
+  const studentDetails = students.reduce((acc, student) => {
+    const row = studentMap[student.uid]
+    const dailySummary = Object.entries(row?.dailyByTopicMap || {}).map(([key, adet]) => {
+      const [ders, konu] = key.split('__')
+      return { ders, konu, adet }
+    })
+
+    dailySummary.sort((a, b) => b.adet - a.adet || a.ders.localeCompare(b.ders, 'tr'))
+
+    acc[student.uid] = {
+      student,
+      dailySummary,
+      weeklyStats: row?.weeklyStats || emptyWeeklyStats(),
+      todaysQuestionCount: row?.todaysQuestionCount || 0,
+    }
+    return acc
+  }, {})
+
+  return {
+    students,
+    overview,
+    studentDetails,
+  }
 }
 
 export async function getCoachDailySummary(dayStart, dayEnd) {
