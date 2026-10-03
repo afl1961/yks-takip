@@ -135,6 +135,15 @@ export async function getStudentQuestions(uid) {
   return snap.docs.map((item) => ({ id: item.id, ...item.data() }))
 }
 
+export async function getStudentQuestionHistory(uid) {
+  ensureFirebase()
+  const q = query(collection(db, 'sorular'), where('uid', '==', uid), limit(500))
+  const snap = await getDocs(q)
+  return snap.docs
+    .map((item) => ({ id: item.id, ...item.data() }))
+    .sort((a, b) => (b.tarih?.toMillis?.() || 0) - (a.tarih?.toMillis?.() || 0))
+}
+
 export async function markQuestionResult({ questionId, isCorrect, currentWeek }) {
   ensureFirebase()
   const ref = doc(db, 'sorular', questionId)

@@ -1,12 +1,43 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   getCoachDashboardData,
   getDersKonuListesi,
+  getStudentQuestionHistory,
   saveDersKonuListesi,
 } from '../services/firestore'
 import { getWeekNumber } from '../lib/week'
 
 const SELECTED_STUDENT_KEY = 'coachSelectedStudentUid'
+const DAYS_PER_PAGE = 10
+
+// Tarihi yerel saatle YYYY-MM-DD anahtarına çevirir (gün gruplaması için)
+function dayKey(tarih) {
+  const d = tarih?.toDate ? tarih.toDate() : new Date(tarih)
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const g = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${g}`
+}
+
+// Gün etiketi: son 7 gün içindeyse haftanın günü de yazılır, tarih "gün ay yıl" biçiminde
+function dayLabel(key) {
+  const [y, m, g] = key.split('-').map(Number)
+  const date = new Date(y, m - 1, g)
+  const now = new Date()
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const diffDays = Math.round((todayStart - date) / 86400000)
+  const withinWeek = diffDays >= 0 && diffDays <= 6
+
+  const opts = withinWeek
+    ? { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }
+    : { day: 'numeric', month: 'long', year: 'numeric' }
+  return date.toLocaleDateString('tr-TR', opts)
+}
+
+function timeLabel(tarih) {
+  const d = tarih?.toDate ? tarih.toDate() : new Date(tarih)
+  return d.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })
+}
 
 function CoachPanel({ firebaseReady }) {
   const [students, setStudents] = useState([])
@@ -15,6 +46,11 @@ function CoachPanel({ firebaseReady }) {
   const [liste, setListe] = useState({ TYT: {}, AYT: {} })
   const [editState, setEditState] = useState({ oturum: 'TYT', ders: '', konu: '' })
   const [message, setMessage] = useState('')
+
+  const [history, setHistory] = useState([])
+  const [historyLoading, setHistoryLoading] = useState(false)
+  const [visibleDayCount, setVisibleDayCount] = useState(DAYS_PER_PAGE)
+  const sentinelRef = useRef(null)
 
   const currentWeek = getWeekNumber(new Date())
 
@@ -63,6 +99,65 @@ function CoachPanel({ firebaseReady }) {
   }, [currentWeek, selectedStudentUid])
 
   const selectedStudentDetail = dashboard.studentDetails[selectedStudentUid] || null
+
+  // Seçili öğrencinin tüm soru geçmişini yükle
+  useEffect(() => {
+    let cancelled = false
+    const loadHistory = async () => {
+      if (!firebaseReady || !selectedStudentUid) {
+        setHistory([])
+        return
+      }
+      setHistoryLoading(true)
+      try {
+        const data = await getStudentQuestionHistory(selectedStudentUid)
+        if (!cancelled) {
+          setHistory(data)
+          setVisibleDayCount(DAYS_PER_PAGE)
+        }
+      } catch (err) {
+        if (!cancelled) setMessage(err.message)
+      } finally {
+        if (!cancelled) setHistoryLoading(false)
+      }
+    }
+    loadHistory()
+    return () => {
+      cancelled = true
+    }
+  }, [firebaseReady, selectedStudentUid])
+
+  // Günlere göre grupla (yeniden eskiye)
+  const dayGroups = useMemo(() => {
+    const map = {}
+    history.forEach((q) => {
+      const key = dayKey(q.tarih)
+      if (!map[key]) map[key] = []
+      map[key].push(q)
+    })
+    return Object.keys(map)
+      .sort((a, b) => b.localeCompare(a))
+      .map((key) => ({ key, questions: map[key] }))
+  }, [history])
+
+  const visibleDays = dayGroups.slice(0, visibleDayCount)
+  const hasMoreDays = visibleDayCount < dayGroups.length
+
+  // Liste sonuna gelince 10 gün daha göster (sonsuz kaydırma)
+  useEffect(() => {
+    const el = sentinelRef.current
+    if (!el || !hasMoreDays) return
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setVisibleDayCount((prev) => prev + DAYS_PER_PAGE)
+        }
+      },
+      { rootMargin: '300px' },
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [hasMoreDays, dayGroups.length])
 
   const dersList = useMemo(
     () => Object.keys(liste?.[editState.oturum] || {}),
@@ -211,6 +306,46 @@ function CoachPanel({ firebaseReady }) {
                 ))}
               </ul>
             )}
+          </div>
+        )}
+      </section>
+
+      <section className="card">
+        <h2>Günlük Soru Geçmişi</h2>
+        <p className="muted">
+          Seçili öğrencinin gün gün yüklediği tüm sorular. Son 10 gün gösterilir, listeyi
+          aşağı kaydırdıkça daha eski günler de yüklenir.
+        </p>
+
+        {!selectedStudentUid ? (
+          <p>Geçmiş görmek için öğrenci seçin.</p>
+        ) : historyLoading ? (
+          <p className="history-loading">Yükleniyor...</p>
+        ) : dayGroups.length === 0 ? (
+          <p>Bu öğrenci henüz soru yüklemedi.</p>
+        ) : (
+          <div className="stack">
+            {visibleDays.map((group) => (
+              <div key={group.key} className="day-group">
+                <div className="day-group-head">
+                  <strong>{dayLabel(group.key)}</strong>
+                  <span className="day-count">
+                    {group.questions.length} soru
+                  </span>
+                </div>
+                <ul className="day-question-list">
+                  {group.questions.map((q) => (
+                    <li key={q.id} className="day-question">
+                      <span>
+                        <strong>{q.ders}</strong> / {q.konu}
+                      </span>
+                      <span className="day-question-time">{timeLabel(q.tarih)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+            {hasMoreDays && <div ref={sentinelRef} className="history-loading">Daha eski günler yükleniyor...</div>}
           </div>
         )}
       </section>
